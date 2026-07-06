@@ -1,0 +1,10 @@
+{
+  "name": "PawLink – Smart Animal Welfare Platform",
+  "description": "A premium SaaS-style unified portal for pet rescue, rapid reporting, lost-and-found tracking, community adoption, verified donations, and smart veterinary logs.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
