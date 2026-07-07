@@ -30,22 +30,22 @@ export default function AdminPanel({ onLogout, onNavigateToDashboard }) {
   };
 
   return (
-    <div className="bg-slate-950 text-slate-100 min-h-screen flex font-sans antialiased text-left">
+    <div className="bg-[#FAF8F5] text-slate-800 min-h-screen flex font-sans antialiased text-left">
       
       {/* ==================================================== */}
       {/* LEFT ADMIN SIDEBAR                                   */}
       {/* ==================================================== */}
-      <aside className="w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between shrink-0">
+      <aside className="w-64 bg-white border-r border-[#EFE7DC] p-6 flex flex-col justify-between shrink-0 shadow-sm">
         <div className="space-y-8">
           
           {/* Logo identity */}
           <div className="flex items-center gap-2">
-            <div className="bg-green-600 p-2 rounded-xl text-white">
+            <div className="bg-[#8B5E3C] p-2.5 rounded-xl text-white shadow-sm shadow-[#8B5E3C]/20">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-lg font-extrabold text-white tracking-tight">Paw<span className="text-green-500">Link</span></span>
-              <span className="text-[9px] text-green-500 font-bold uppercase tracking-wider block -mt-1">Admin Operations</span>
+              <span className="text-xl font-extrabold text-[#2C2C2C] tracking-tight">Paw<span className="text-[#8B5E3C]">Link</span></span>
+              <span className="text-[10px] text-[#C68B59] font-bold uppercase tracking-wider block -mt-1">Admin Operations</span>
             </div>
           </div>
 
@@ -63,7 +63,7 @@ export default function AdminPanel({ onLogout, onNavigateToDashboard }) {
                   key={tab.id}
                   onClick={() => setActiveSubTab(tab.id)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer ${
-                    isActive ? "bg-green-700 text-white shadow-md shadow-green-900/20" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    isActive ? "bg-[#8B5E3C] text-white shadow-sm shadow-[#8B5E3C]/20" : "text-slate-600 hover:text-[#8B5E3C] hover:bg-[#FAF8F5]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -83,13 +83,13 @@ export default function AdminPanel({ onLogout, onNavigateToDashboard }) {
         <div className="space-y-3">
           <button 
             onClick={onNavigateToDashboard}
-            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3.5 rounded-xl font-bold text-xs text-slate-200 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full bg-[#FAF8F5] hover:bg-[#EFE7DC] border border-[#D8C3A5] py-3.5 rounded-xl font-bold text-xs text-[#2C2C2C] flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Exit Dark Mode
+            <ArrowLeft className="w-4 h-4" /> Exit Admin
           </button>
           <button 
             onClick={onLogout}
-            className="w-full bg-transparent hover:bg-red-500/10 text-red-400 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full bg-transparent hover:bg-red-50 text-red-600 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
             End Admin Session
           </button>
@@ -102,11 +102,11 @@ export default function AdminPanel({ onLogout, onNavigateToDashboard }) {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Top telemetry bar */}
-        <header className="bg-slate-900 border-b border-slate-800 py-4 px-8 flex justify-between items-center z-10">
+        <header className="bg-white border-b border-[#EFE7DC] py-4 px-8 flex justify-between items-center z-10">
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-extrabold text-white">System Admin Control Room</h2>
-            <span className="text-[10px] bg-green-500/10 text-green-400 font-extrabold px-3 py-1 rounded-full border border-green-500/20">
-              CLUSTER ACTIVE • SECURE HTTPS
+            <h2 className="text-sm font-extrabold text-slate-800">System Admin Control Room</h2>
+            <span className="text-[10px] bg-[#FAF8F5] text-slate-500 font-bold px-3 py-1 rounded-full border border-slate-200 uppercase tracking-wider">
+              Admin Gateway
             </span>
           </div>
 
