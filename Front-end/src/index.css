@@ -4,6 +4,34 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-primary: #8B5E3C;
+  --color-secondary: #D8C3A5;
+  --color-accent: #C68B59;
+  --color-brand-bg: #FAF8F5;
+  --color-dark-gray: #2C2C2C;
+
+  /* Global theme override bindings */
+  --color-green-50: #FAF8F5;
+  --color-green-100: #EFE7DC;
+  --color-green-500: #C68B59;
+  --color-green-600: #C68B59;
+  --color-green-700: #8B5E3C;
+  --color-green-800: #744E31;
+  --color-green-900: #5D3E27;
+  --color-green-950: #2C2C2C;
+
+  --color-emerald-50: #FAF8F5;
+  --color-emerald-100: #EFE7DC;
+  --color-emerald-500: #C68B59;
+  --color-emerald-600: #8B5E3C;
+  --color-emerald-700: #744E31;
+  --color-emerald-800: #5D3E27;
+  --color-emerald-900: #2C2C2C;
+  --color-emerald-950: #2C2C2C;
+
+  --color-slate-50: #FAF8F5;
+  --color-slate-100: #EFE7DC;
 }
 
 /* Custom premium scrollbar styling */

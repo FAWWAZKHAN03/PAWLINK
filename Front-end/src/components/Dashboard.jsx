@@ -124,28 +124,28 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
       {/* ==================================================== */}
       {/* LEFT SAAS WORKSPACE SIDEBAR                           */}
       {/* ==================================================== */}
-      <aside className="hidden lg:flex flex-col justify-between w-64 bg-slate-900 text-slate-100 p-6 border-r border-slate-800 shrink-0">
+      <aside className="hidden lg:flex flex-col justify-between w-64 bg-white text-slate-800 p-6 border-r border-[#EFE7DC] shrink-0 shadow-sm">
         <div className="space-y-8">
           
           {/* Platform Identity */}
           <button onClick={onNavigateToPublic} className="flex items-center gap-2 group text-left cursor-pointer">
-            <div className="bg-green-700 p-2 rounded-xl text-white group-hover:scale-105 transition-transform">
+            <div className="bg-[#8B5E3C] p-2.5 rounded-xl text-white group-hover:scale-105 transition-transform shadow-sm shadow-[#8B5E3C]/20">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xl font-extrabold text-white tracking-tight">Paw<span className="text-green-500">Link</span></span>
-              <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider block -mt-1">Smart Welfare</span>
+              <span className="text-xl font-extrabold text-[#2C2C2C] tracking-tight">Paw<span className="text-[#8B5E3C]">Link</span></span>
+              <span className="text-[10px] text-[#C68B59] font-bold uppercase tracking-wider block -mt-1">Smart Welfare</span>
             </div>
           </button>
 
           {/* Current login Profile capsule */}
-          <div className="bg-slate-800/50 border border-slate-800/80 p-3.5 rounded-2xl flex items-center gap-3">
-            <div className="bg-green-700 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold uppercase text-xs">
+          <div className="bg-[#FAF8F5] border border-[#EFE7DC] p-3.5 rounded-2xl flex items-center gap-3">
+            <div className="bg-[#8B5E3C] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold uppercase text-xs">
               {role[0]}
             </div>
             <div className="text-left">
-              <p className="font-bold text-xs truncate max-w-[120px]">{role} Account</p>
-              <p className="text-[9px] text-green-400 font-extrabold uppercase tracking-widest">VERIFIED</p>
+              <p className="font-extrabold text-xs text-[#2C2C2C] truncate max-w-[120px]">{role} Account</p>
+              <p className="text-[9px] text-[#C68B59] font-extrabold uppercase tracking-widest">VERIFIED</p>
             </div>
           </div>
 
@@ -174,8 +174,8 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
                   onClick={() => setActiveTab(menu.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
                     isActive 
-                      ? "bg-green-700 text-white shadow-md shadow-green-900/10" 
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                      ? "bg-[#8B5E3C] text-white shadow-sm shadow-[#8B5E3C]/20" 
+                      : "text-slate-600 hover:text-[#8B5E3C] hover:bg-[#FAF8F5]"
                   }`}
                 >
                   {menu.icon}
@@ -191,16 +191,16 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
           {role === "NGO" && (
             <button 
               onClick={onNavigateToAdmin}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
+              className="w-full bg-[#FAF8F5] hover:bg-[#EFE7DC] text-[#2C2C2C] border border-[#D8C3A5] py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
             >
-              <Shield className="w-4 h-4 text-green-400" />
-              NGO Dark Workspace
+              <Shield className="w-4 h-4 text-[#8B5E3C]" />
+              NGO Workspace
             </button>
           )}
 
           <button 
             onClick={onLogout}
-            className="w-full bg-transparent hover:bg-red-500/10 text-red-400 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer border border-transparent hover:border-red-500/20 transition-all"
+            className="w-full bg-transparent hover:bg-red-50 text-red-600 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer border border-transparent hover:border-red-100 transition-all"
           >
             <LogOut className="w-4 h-4" />
             End Session

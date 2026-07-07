@@ -11,7 +11,7 @@ import {
   MOCK_VOLUNTEERS, MOCK_SHELTERS, FAQ_DATA
 } from "../data";
 
-export default function PublicWebsite({ onNavigateToLogin, onNavigateToSignup, onNavigateToDashboard }) {
+export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onNavigateToLogin, onNavigateToSignup, onNavigateToDashboard }) {
   // Navigation & Sub-page state
   const [activeTab, setActiveTab] = useState("Home");
   const [searchQuery, setSearchQuery] = useState("");
@@ -198,15 +198,15 @@ export default function PublicWebsite({ onNavigateToLogin, onNavigateToSignup, o
         key={tabName}
         id={`nav-${tabName}`}
         onClick={() => setActiveTab(tabName)}
-        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 relative ${
-          isMain ? "text-green-900 bg-green-50" : "text-gray-600 hover:text-green-800 hover:bg-gray-50"
+        className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-300 relative ${
+          isMain ? "text-[#8B5E3C] bg-[#8B5E3C]/5" : "text-gray-600 hover:text-[#8B5E3C] hover:bg-gray-50"
         }`}
       >
         {tabName}
         {isMain && (
           <motion.div
             layoutId="activeTabUnderline"
-            className="absolute bottom-0 left-2 right-2 h-0.5 bg-green-700 rounded-full"
+            className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#8B5E3C] rounded-full"
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
           />
         )}
@@ -215,7 +215,7 @@ export default function PublicWebsite({ onNavigateToLogin, onNavigateToSignup, o
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen text-slate-900 font-sans flex flex-col antialiased">
+    <div className="bg-[#FAF8F5] min-h-screen text-slate-900 font-sans flex flex-col antialiased">
       
       {/* ==================================================== */}
       {/* TOP EMERGENCY BANNER                                 */}
@@ -242,21 +242,21 @@ export default function PublicWebsite({ onNavigateToLogin, onNavigateToSignup, o
       {/* ==================================================== */}
       {/* PREMIUM GLASS NAVBAR                                  */}
       {/* ==================================================== */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 md:px-8 py-3.5 flex justify-between items-center transition-all">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#EFE7DC] px-4 md:px-8 py-3.5 flex justify-between items-center transition-all">
         <div className="flex items-center gap-8">
           <button onClick={() => setActiveTab("Home")} className="flex items-center gap-2 group cursor-pointer">
-            <div className="bg-green-700 p-2 rounded-xl text-white group-hover:scale-110 transition-transform duration-300 shadow-md shadow-green-900/10">
+            <div className="bg-[#8B5E3C] p-2.5 rounded-xl text-white group-hover:scale-110 transition-transform duration-300 shadow-md shadow-[#8B5E3C]/10">
               <Activity className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <span className="text-xl font-extrabold text-slate-900 tracking-tight block">Paw<span className="text-green-700">Link</span></span>
-              <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider block -mt-1">Smart Welfare</span>
+              <span className="text-xl font-extrabold text-[#2C2C2C] tracking-tight block">Paw<span className="text-[#8B5E3C]">Link</span></span>
+              <span className="text-[10px] text-[#C68B59] font-bold uppercase tracking-wider block -mt-1">Smart Welfare</span>
             </div>
           </button>
 
           {/* Large desktop menu */}
           <nav className="hidden xl:flex items-center gap-1">
-            {["Home", "About", "Services", "Rescue", "Lost & Found", "Adoption", "Donations", "Volunteers", "Shelters & Vet", "Awareness", "Contact"].map(tab => renderNavButton(tab))}
+            {["Home", "Rescue", "Lost & Found", "Adoption", "Donations", "Contact"].map(tab => renderNavButton(tab))}
           </nav>
         </div>
 
@@ -271,25 +271,18 @@ export default function PublicWebsite({ onNavigateToLogin, onNavigateToSignup, o
           </button>
 
           <button 
-            onClick={() => onNavigateToDashboard("Citizen")}
-            className="flex items-center gap-1 bg-green-700 hover:bg-green-800 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all duration-300 cursor-pointer shadow-md shadow-green-700/10"
+            onClick={() => onNavigateToDashboard(authRole || "Citizen")}
+            className="flex items-center gap-1 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all duration-300 cursor-pointer shadow-md shadow-[#8B5E3C]/10"
           >
             <Compass className="w-3.5 h-3.5" />
             Portal Dashboard
           </button>
 
           <button 
-            onClick={onNavigateToLogin}
-            className="text-slate-600 hover:text-slate-900 font-bold px-3 py-2 rounded-xl text-xs transition-all duration-300 cursor-pointer"
+            onClick={onLogout}
+            className="text-red-600 hover:bg-red-50 font-bold px-4 py-2 rounded-xl text-xs transition-all duration-300 cursor-pointer border border-transparent hover:border-red-100"
           >
-            Log In
-          </button>
-
-          <button 
-            onClick={onNavigateToSignup}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all duration-300 cursor-pointer shadow-sm"
-          >
-            Sign Up
+            Log Out
           </button>
         </div>
       </header>
@@ -297,8 +290,8 @@ export default function PublicWebsite({ onNavigateToLogin, onNavigateToSignup, o
       {/* ==================================================== */}
       {/* RESPONSIVE SUB-MENU (MOBILE/TABLET SCROLLABLE)       */}
       {/* ==================================================== */}
-      <div className="xl:hidden bg-white/95 border-b border-slate-100 px-4 py-2 overflow-x-auto flex gap-1 whitespace-nowrap sticky top-[69px] z-35 scrollbar-none">
-        {["Home", "About", "Services", "Rescue", "Lost & Found", "Adoption", "Donations", "Volunteers", "Shelters & Vet", "Awareness", "Contact"].map(tab => renderNavButton(tab))}
+      <div className="xl:hidden bg-white/95 border-b border-[#EFE7DC] px-4 py-2 overflow-x-auto flex gap-1 whitespace-nowrap sticky top-[69px] z-35 scrollbar-none">
+        {["Home", "Rescue", "Lost & Found", "Adoption", "Donations", "Contact"].map(tab => renderNavButton(tab))}
       </div>
 
       {/* ==================================================== */}
