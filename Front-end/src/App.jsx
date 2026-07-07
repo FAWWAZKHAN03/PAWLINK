@@ -1,27 +1,83 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, HelpCircle, Activity, Shield, Users, Layers, ExternalLink } from "lucide-react";
+import { Sparkles, HelpCircle, Activity, Shield, Users, Layers, ExternalLink, Loader2 } from "lucide-react";
 import PublicWebsite from "./components/PublicWebsite";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import AdminPanel from "./components/AdminPanel";
+import ProfilePage from "./components/ProfilePage";
+import { fetchCurrentUser, logout as apiLogout } from "./api/auth";
+import { getToken, getStoredUser } from "./api/client";
 
 export default function App() {
-  const [view, setView] = useState("Public"); // Public, Login, Signup, Dashboard, Admin
+  const [view, setView] = useState("Public"); // Public, Login, Signup, Dashboard, Admin, Profile
   const [authRole, setAuthRole] = useState("Citizen"); // Citizen, Responder, NGO
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [showSandboxTooltip, setShowSandboxTooltip] = useState(false);
 
-  const handleAuthSuccess = (role) => {
+  // Restore the session on page load/refresh by validating the stored JWT
+  // against the backend, so the user isn't logged out every time they refresh.
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setCheckingSession(false);
+      return;
+    }
+
+    // Show the cached user immediately for a fast UI, then confirm with the server
+    const cached = getStoredUser();
+    if (cached) {
+      setCurrentUser(cached);
+      setAuthRole(cached.role);
+      setIsAuthenticated(true);
+      setView(cached.role === "NGO" ? "Admin" : "Dashboard");
+    }
+
+    fetchCurrentUser()
+      .then((user) => {
+        setCurrentUser(user);
+        setAuthRole(user.role);
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        // Token expired/invalid - clear the stale session
+        apiLogout();
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+        setView("Public");
+      })
+      .finally(() => setCheckingSession(false));
+  }, []);
+
+  const handleAuthSuccess = (role, user) => {
     setAuthRole(role);
     setIsAuthenticated(true);
+    if (user) setCurrentUser(user);
     if (role === "NGO") {
       setView("Admin");
     } else {
       setView("Dashboard");
     }
   };
+
+  const handleLogout = () => {
+    apiLogout();
+    setAuthRole("Citizen");
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setView("Public");
+  };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-green-700 animate-spin" />
+      </div>
+    );
+  }
 
   const handleSandboxNavigate = (targetView, role = "Citizen") => {
     setAuthRole(role);
@@ -92,16 +148,25 @@ export default function App() {
           {view === "Dashboard" && (
             <Dashboard 
               role={authRole}
-              onLogout={() => { setAuthRole("Citizen"); setIsAuthenticated(false); setView("Public"); }}
+              user={currentUser}
+              onLogout={handleLogout}
               onNavigateToAdmin={() => { setAuthRole("NGO"); setView("Admin"); }}
               onNavigateToPublic={() => setView("Public")}
+              onNavigateToProfile={() => setView("Profile")}
             />
           )}
 
           {view === "Admin" && (
             <AdminPanel 
-              onLogout={() => { setAuthRole("Citizen"); setIsAuthenticated(false); setView("Public"); }}
+              onLogout={handleLogout}
               onNavigateToDashboard={() => { setAuthRole("Citizen"); setView("Dashboard"); }}
+            />
+          )}
+
+          {view === "Profile" && (
+            <ProfilePage
+              onNavigateBack={() => setView(authRole === "NGO" ? "Admin" : "Dashboard")}
+              onUserUpdated={(user) => { setCurrentUser(user); setAuthRole(user.role); }}
             />
           )}
         </motion.div>

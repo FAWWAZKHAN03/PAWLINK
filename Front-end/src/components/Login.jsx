@@ -4,6 +4,7 @@ import {
   Shield, User, Award, Mail, Lock, ArrowRight, ArrowLeft, 
   CheckCircle, Eye, EyeOff, AlertCircle 
 } from "lucide-react";
+import { login } from "../api/auth";
 
 export default function Login({ initialRole = "Citizen", onAuthSuccess, onNavigateToPublic, onNavigateToSignup }) {
   const [selectedRole, setSelectedRole] = useState(initialRole); // Citizen, Responder, NGO
@@ -14,7 +15,7 @@ export default function Login({ initialRole = "Citizen", onAuthSuccess, onNaviga
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setErrorMessage("Please fill in all required fields.");
@@ -23,14 +24,19 @@ export default function Login({ initialRole = "Citizen", onAuthSuccess, onNaviga
     setErrorMessage("");
     setIsLoading(true);
 
-    // Simulate clinical auth handshake with animation
-    setTimeout(() => {
+    try {
+      // Real backend authentication - validates credentials, returns a JWT + user record
+      const user = await login({ email, password });
       setIsLoading(false);
       setIsSuccess(true);
       setTimeout(() => {
-        onAuthSuccess(selectedRole);
+        // Route using the role actually stored on the account, not just the UI selector
+        onAuthSuccess(user.role, user);
       }, 1000);
-    }, 1800);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage(err.message || "Login failed. Please check your credentials.");
+    }
   };
 
   const roleInfo = {

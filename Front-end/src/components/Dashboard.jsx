@@ -10,8 +10,9 @@ import {
   MOCK_PETS, MOCK_LOST_PETS, MOCK_RESCUES, MOCK_DONATIONS,
   MOCK_VOLUNTEERS, MOCK_SHELTERS, MOCK_MESSAGES
 } from "../data";
+import { resolveAssetUrl } from "../api/client";
 
-export default function Dashboard({ role, onLogout, onNavigateToAdmin, onNavigateToPublic }) {
+export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onNavigateToPublic, onNavigateToProfile }) {
   const isCitizen = role === "Citizen";
   const [activeTab, setActiveTab] = useState(role === "Citizen" ? "CitizenOverview" : "Overview");
   const [searchQuery, setSearchQuery] = useState("");
@@ -283,6 +284,24 @@ export default function Dashboard({ role, onLogout, onNavigateToAdmin, onNavigat
             >
               Public Hub <ExternalLink className="w-3 h-3" />
             </button>
+
+            {/* Profile avatar / link - navigates to the real profile editor */}
+            <button
+              onClick={onNavigateToProfile}
+              className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl pl-1.5 pr-3 py-1.5 transition-colors cursor-pointer"
+              title="My Profile"
+            >
+              <div className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center">
+                {user && user.avatar ? (
+                  <img src={resolveAssetUrl(user.avatar)} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-3.5 h-3.5 text-slate-500" />
+                )}
+              </div>
+              <span className="text-xs font-bold text-slate-700 hidden sm:inline">
+                {user && user.name ? user.name.split(" ")[0] : "Profile"}
+              </span>
+            </button>
           </div>
         </header>
 
@@ -314,6 +333,7 @@ export default function Dashboard({ role, onLogout, onNavigateToAdmin, onNavigat
               {m.label}
             </button>
           ))}
+          <button onClick={onNavigateToProfile} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-50">Profile</button>
           <button onClick={onLogout} className="px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50">Logout</button>
         </div>
 
