@@ -1,4 +1,11 @@
 const express = require('express');
 const router = express.Router();
-router.get('/', (req, res) => res.json({ message: 'Admin routes placeholder' }));
+const protect = require('../middleware/auth.middleware');
+const allowRoles = require('../middleware/role.middleware');
+const { getDashboardStats, getUsers } = require('../controllers/admin.controller');
+
+router.use(protect, allowRoles('NGO'));
+router.get('/stats', getDashboardStats);
+router.get('/users', getUsers);
+
 module.exports = router;

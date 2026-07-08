@@ -4,8 +4,7 @@ import {
   Shield, User, Award, Mail, Lock, ArrowRight, 
   CheckCircle, Eye, EyeOff, AlertCircle 
 } from "lucide-react";
-import { signup } from "../api/auth";
-
+import { register } from "../api/auth";
 export default function Signup({ initialRole = "Citizen", onAuthSuccess, onNavigateToLogin }) {
   const [selectedRole, setSelectedRole] = useState(initialRole); // Citizen, Responder, NGO
   const [showPassword, setShowPassword] = useState(false);
@@ -17,14 +16,10 @@ export default function Signup({ initialRole = "Citizen", onAuthSuccess, onNavig
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
       setErrorMessage("Please fill in all required fields.");
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
       return;
     }
     if ((selectedRole === "Responder" || selectedRole === "NGO") && !license) {
@@ -34,15 +29,14 @@ export default function Signup({ initialRole = "Citizen", onAuthSuccess, onNavig
     setErrorMessage("");
     setIsLoading(true);
 
-    try {
-      // Real backend registration - creates the account, hashes the password, returns a JWT
-      const user = await signup({ name, email, password, role: selectedRole, licenseId: license });
+    // Simulate clinical auth handshake with animation
+    setTimeout(() => {
       setIsLoading(false);
       setIsSuccess(true);
       setTimeout(() => {
-        onAuthSuccess(user.role, user);
+        onAuthSuccess(selectedRole);
       }, 1000);
-    }, 1800);
+    }, 1500);
   };
 
   const roleInfo = {

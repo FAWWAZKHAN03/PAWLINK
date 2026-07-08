@@ -5,7 +5,6 @@ import {
   CheckCircle, Eye, EyeOff, AlertCircle 
 } from "lucide-react";
 import { login } from "../api/auth";
-
 export default function Login({ initialRole = "Citizen", onAuthSuccess, onNavigateToSignup }) {
   const [selectedRole, setSelectedRole] = useState(initialRole); // Citizen, Responder, NGO
   const [showPassword, setShowPassword] = useState(false);
@@ -16,26 +15,38 @@ export default function Login({ initialRole = "Citizen", onAuthSuccess, onNaviga
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setErrorMessage("Please fill in all required fields.");
-      return;
-    }
+  e.preventDefault();
+
+  if (!email || !password) {
+    setErrorMessage("Please fill in all required fields.");
+    return;
+  }
+
+  try {
     setErrorMessage("");
     setIsLoading(true);
 
-    try {
-      // Real backend authentication - validates credentials, returns a JWT + user record
-      const user = await login({ email, password });
-      setIsLoading(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        // Route using the role actually stored on the account, not just the UI selector
-        onAuthSuccess(user.role, user);
-      }, 1000);
-    }, 1800);
-  };
+    const result = await login({
+      email,
+      password,
+    });
 
+    setIsLoading(false);
+    setIsSuccess(true);
+
+    setTimeout(() => {
+      onAuthSuccess(result.user.role, result.user);
+    }, 1000);
+  } catch (err) {
+    setIsLoading(false);
+
+    setErrorMessage(
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Invalid email or password."
+    );
+  }
+};
   const roleInfo = {
     Citizen: {
       title: "Citizen Account",

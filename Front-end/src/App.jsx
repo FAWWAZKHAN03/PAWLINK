@@ -1,111 +1,108 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, HelpCircle, Activity, Shield, Users, Layers, ExternalLink } from "lucide-react";
+import { Loader2 } from "lucide-react";
+
 import PublicWebsite from "./components/PublicWebsite";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import AdminPanel from "./components/AdminPanel";
 import ProfilePage from "./components/ProfilePage";
-import { fetchCurrentUser, logout as apiLogout } from "./api/auth";
-import { getToken, getStoredUser } from "./api/client";
+
+import { getMe, logout as apiLogout } from "./api/auth";
 
 export default function App() {
-  const [view, setView] = useState("Public"); // Public, Login, Signup, Dashboard, Admin
-  const [authRole, setAuthRole] = useState("Citizen"); // Citizen, Responder, NGO
+  const [view, setView] = useState("Public");
+  const [authRole, setAuthRole] = useState("Citizen");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showSandboxTooltip, setShowSandboxTooltip] = useState(false);
 
-  // Restore the session on page load/refresh by validating the stored JWT
-  // against the backend, so the user isn't logged out every time they refresh.
+  const [currentUser, setCurrentUser] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
   useEffect(() => {
-    const token = getToken();
+    const token = localStorage.getItem("token");
     if (!token) {
       setCheckingSession(false);
       return;
     }
 
-    // Show the cached user immediately for a fast UI, then confirm with the server
-    const cached = getStoredUser();
-    if (cached) {
-      setCurrentUser(cached);
-      setAuthRole(cached.role);
+    const cachedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (cachedUser) {
+      setCurrentUser(cachedUser);
+      setAuthRole(cachedUser.role);
       setIsAuthenticated(true);
-      setView(cached.role === "NGO" ? "Admin" : "Dashboard");
+      setView(cachedUser.role === "NGO" ? "Admin" : "Dashboard");
     }
 
-    fetchCurrentUser()
+    getMe()
       .then((user) => {
         setCurrentUser(user);
         setAuthRole(user.role);
         setIsAuthenticated(true);
       })
       .catch(() => {
-        // Token expired/invalid - clear the stale session
         apiLogout();
-        setIsAuthenticated(false);
         setCurrentUser(null);
-        setView("Public");
+        setIsAuthenticated(false);
+        setAuthRole("Citizen");
+        setView("Login");
       })
-      .finally(() => setCheckingSession(false));
+      .finally(() => {
+        setCheckingSession(false);
+      });
   }, []);
 
   const handleAuthSuccess = (role, user) => {
+    setCurrentUser(user);
     setAuthRole(role);
     setIsAuthenticated(true);
-    if (user) setCurrentUser(user);
+
     if (role === "NGO") {
       setView("Admin");
     } else {
-      // After login, send the user to the Homepage (Public Website Hub) where they can explore or access their portal
-      setView("Public");
+      setView("Dashboard");
     }
   };
 
   const handleLogout = () => {
     apiLogout();
-    setAuthRole("Citizen");
-    setIsAuthenticated(false);
     setCurrentUser(null);
-    setView("Public");
-  };
-
-  if (checkingSession) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-green-700 animate-spin" />
-      </div>
-    );
-  }
-
-  const handleLogout = () => {
     setAuthRole("Citizen");
     setIsAuthenticated(false);
     setView("Login");
   };
 
-  // Enforce authentication gate:
-  // If not authenticated, the only valid views are Login and Signup.
-  // Any attempt to view Public, Dashboard, or Admin falls back to Login.
-  const activeView = isAuthenticated ? view : (view === "Signup" ? "Signup" : "Login");
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+      </div>
+    );
+  }
+
+  const activeView = isAuthenticated
+    ? view
+    : view === "Signup"
+      ? "Signup"
+      : "Login";
 
   return (
-    <div className="min-h-screen bg-brand-bg relative select-none">
-      
-      {/* Dynamic Module Rendering */}
+    <div className="min-h-screen bg-brand-bg">
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeView + "-" + authRole}
+          key={activeView}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -15 }}
-          transition={{ duration: 0.35, ease: "easeInOut" }}
+          transition={{ duration: 0.35 }}
           className="min-h-screen"
         >
           {activeView === "Public" && (
-            <PublicWebsite 
+            <PublicWebsite
               isAuthenticated={isAuthenticated}
               authRole={authRole}
+              currentUser={currentUser}
               onLogout={handleLogout}
               onNavigateToLogin={() => {
                 setAuthRole("Citizen");
@@ -115,19 +112,15 @@ export default function App() {
                 setAuthRole("Citizen");
                 setView("Signup");
               }}
-              onNavigateToDashboard={(role = "Citizen") => { 
-                setAuthRole(role); 
-                if (role === "NGO") {
-                  setView("Admin");
-                } else {
-                  setView("Dashboard");
-                }
+              onNavigateToDashboard={(role = authRole) => {
+                setAuthRole(role);
+                setView(role === "NGO" ? "Admin" : "Dashboard");
               }}
             />
           )}
 
           {activeView === "Login" && (
-            <Login 
+            <Login
               initialRole={authRole}
               onAuthSuccess={handleAuthSuccess}
               onNavigateToSignup={() => setView("Signup")}
@@ -135,7 +128,7 @@ export default function App() {
           )}
 
           {activeView === "Signup" && (
-            <Signup 
+            <Signup
               initialRole={authRole}
               onAuthSuccess={handleAuthSuccess}
               onNavigateToLogin={() => setView("Login")}
@@ -143,32 +136,45 @@ export default function App() {
           )}
 
           {activeView === "Dashboard" && (
-            <Dashboard 
+            <Dashboard
               role={authRole}
-              onLogout={() => { setAuthRole("Citizen"); setIsAuthenticated(false); setView("Public"); }}
-              onNavigateToAdmin={() => { setAuthRole("NGO"); setView("Admin"); }}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              onNavigateToAdmin={() => {
+                setAuthRole("NGO");
+                setView("Admin");
+              }}
               onNavigateToPublic={() => setView("Public")}
               onNavigateToProfile={() => setView("Profile")}
             />
           )}
 
           {activeView === "Admin" && (
-            <AdminPanel 
+            <AdminPanel
+              currentUser={currentUser}
               onLogout={handleLogout}
-              onNavigateToDashboard={() => { setAuthRole("Citizen"); setView("Dashboard"); }}
+              onNavigateToDashboard={() => {
+                setAuthRole("Citizen");
+                setView("Dashboard");
+              }}
               onNavigateToPublic={() => setView("Public")}
             />
           )}
 
-          {view === "Profile" && (
+          {activeView === "Profile" && (
             <ProfilePage
-              onNavigateBack={() => setView(authRole === "NGO" ? "Admin" : "Dashboard")}
-              onUserUpdated={(user) => { setCurrentUser(user); setAuthRole(user.role); }}
+              currentUser={currentUser}
+              onNavigateBack={() =>
+                setView(authRole === "NGO" ? "Admin" : "Dashboard")
+              }
+              onUserUpdated={(user) => {
+                setCurrentUser(user);
+                setAuthRole(user.role);
+              }}
             />
           )}
         </motion.div>
       </AnimatePresence>
-
     </div>
   );
 }

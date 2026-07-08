@@ -1,4 +1,11 @@
 const express = require('express');
 const router = express.Router();
-router.get('/', (req, res) => res.json({ message: 'Notification routes placeholder' }));
+const protect = require('../middleware/auth.middleware');
+const { getMyNotifications, markAsRead, markAllAsRead } = require('../controllers/notification.controller');
+
+router.use(protect);
+router.get('/', getMyNotifications);
+router.put('/:id/read', markAsRead);
+router.put('/read-all', markAllAsRead);
+
 module.exports = router;

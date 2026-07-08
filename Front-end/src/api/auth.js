@@ -1,28 +1,43 @@
-import { apiFetch, setSession, clearSession } from "./client";
+import client from "./client";
 
-export async function signup({ name, email, password, role, licenseId }) {
-  const data = await apiFetch("/api/auth/register", {
-    method: "POST",
-    body: { name, email, password, role, licenseId },
-  });
-  setSession(data.token, data.user);
+export const register = async (userData) => {
+  const { data } = await client.post("/auth/register", userData);
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+  }
+
+  if (data.user) {
+    localStorage.setItem("user", JSON.stringify(data.user));
+  }
+
+  return data;
+};
+
+export const login = async (credentials) => {
+  const { data } = await client.post("/auth/login", credentials);
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+  }
+
+  if (data.user) {
+    localStorage.setItem("user", JSON.stringify(data.user));
+  }
+
+  return data;
+};
+
+export const getMe = async () => {
+  const { data } = await client.get("/auth/me");
   return data.user;
-}
+};
 
-export async function login({ email, password }) {
-  const data = await apiFetch("/api/auth/login", {
-    method: "POST",
-    body: { email, password },
-  });
-  setSession(data.token, data.user);
-  return data.user;
-}
-
-export async function fetchCurrentUser() {
-  const data = await apiFetch("/api/auth/me", { method: "GET" });
-  return data.user;
-}
-
-export function logout() {
-  clearSession();
-}
+export const logout = async () => {
+  try {
+    await client.post("/auth/logout");
+  } finally {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  }
+};

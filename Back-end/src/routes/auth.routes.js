@@ -1,4 +1,11 @@
 const express = require('express');
 const router = express.Router();
-router.get('/health', (req, res) => res.json({ message: 'Auth routes placeholder' }));
+const { register, login, getMe, logout } = require('../controllers/auth.controller');
+const protect = require('../middleware/auth.middleware');
+
+router.post('/register', register);
+router.post('/login', login);
+router.get('/me', protect, getMe);
+router.post('/logout', protect, logout);
+
 module.exports = router;

@@ -1,4 +1,7 @@
 const express = require('express');
 const router = express.Router();
-router.get('/', (req, res) => res.json({ message: 'Map routes placeholder' }));
+const { getMapPoints } = require('../controllers/map.controller');
+
+router.get('/', getMapPoints);
+
 module.exports = router;
