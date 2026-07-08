@@ -175,7 +175,7 @@ export default function Login({ initialRole = "Citizen", onAuthSuccess, onNaviga
                 
                 {/* Switcher headers */}
                 <div className="border-b border-[#EFE7DC] pb-4">
-                  <h3 className="text-lg font-extrabold text-[#2C2C2C] tracking-tight">Sign In to PawLink</h3>
+                  <h3 className="text-lg font-extrabold text-[#2C2C2C] tracking-tight">Login In to PawLink</h3>
                   <p className="text-xs text-slate-500 mt-1 font-light">Access your personalized responder or citizen tools.</p>
                 </div>
 
