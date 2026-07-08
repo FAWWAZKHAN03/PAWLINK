@@ -16,28 +16,55 @@ export default function Signup({ initialRole = "Citizen", onAuthSuccess, onNavig
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (!name || !email || !password) {
-      setErrorMessage("Please fill in all required fields.");
-      return;
-    }
-    if ((selectedRole === "Responder" || selectedRole === "NGO") && !license) {
-      setErrorMessage(`Please enter your regional credentials/licensing ID for ${selectedRole === "NGO" ? "NGO verification" : "Rescue squad verification"}.`);
-      return;
-    }
+  const handleFormSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!name || !email || !password) {
+    setErrorMessage("Please fill in all required fields.");
+    return;
+  }
+
+  if (
+    (selectedRole === "Responder" || selectedRole === "NGO") &&
+    !license
+  ) {
+    setErrorMessage(
+      `Please enter your licensing ID for ${
+        selectedRole === "NGO" ? "NGO verification" : "Responder verification"
+      }.`
+    );
+    return;
+  }
+
+  try {
     setErrorMessage("");
     setIsLoading(true);
 
-    // Simulate clinical auth handshake with animation
+    const data = await register({
+      name,
+      email,
+      password,
+      role: selectedRole,
+      licenseId: license,
+    });
+
+    setIsLoading(false);
+    setIsSuccess(true);
+
     setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        onAuthSuccess(selectedRole);
-      }, 1000);
-    }, 1500);
-  };
+      onAuthSuccess(data.user.role, data.user);
+    }, 1000);
+
+  } catch (err) {
+    setIsLoading(false);
+
+    setErrorMessage(
+      err?.response?.data?.message ||
+      err?.message ||
+      "Registration failed."
+    );
+  }
+};
 
   const roleInfo = {
     Citizen: {
