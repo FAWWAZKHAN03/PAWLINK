@@ -334,7 +334,7 @@ export default function Signup({ initialRole = "Citizen", onAuthSuccess, onNavig
                       onClick={onNavigateToLogin}
                       className="text-[#8B5E3C] hover:underline font-bold transition-colors cursor-pointer"
                     >
-                      Sign In instead
+                      Login In instead
                     </button>
                   </p>
                 </div>

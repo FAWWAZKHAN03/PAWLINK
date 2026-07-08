@@ -264,7 +264,7 @@ export default function Login({ initialRole = "Citizen", onAuthSuccess, onNaviga
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
-                        <span>Verify & Sign In</span>
+                        <span>Verify & Login</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
