@@ -5,7 +5,7 @@ const RescueRequest = require('../models/RescueRequest');
 const VALID_STATUSES = ['Reported', 'Verified', 'Dispatched', 'On-Site', 'Rescued', 'Vet-Care', 'Completed'];
 
 /**
- * @route   POST /api/rescue
+ * @route   POST /api/rescues
  * @desc    Report an animal in distress (works for guests and logged-in users)
  * @access  Public
  */
@@ -33,7 +33,7 @@ exports.createRescue = asyncHandler(async (req, res) => {
 });
 
 /**
- * @route   GET /api/rescue
+ * @route   GET /api/rescues
  * @access  Public
  */
 exports.getRescues = asyncHandler(async (req, res) => {
@@ -49,8 +49,27 @@ exports.getRescues = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, count: rescues.length, rescues });
 });
 
+// Route compatibility alias for routes using the older handler name.
+exports.getAllRescues = exports.getRescues;
+
 /**
- * @route   GET /api/rescue/:id
+ * @route   GET /api/rescues/my
+ * @access  Private
+ */
+exports.getMyRescues = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    throw new ApiError('Authentication required', 401);
+  }
+
+  const rescues = await RescueRequest.find({ reportedBy: req.user._id })
+    .populate('assignedVolunteer', 'name phone avatar')
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({ success: true, count: rescues.length, rescues });
+});
+
+/**
+ * @route   GET /api/rescues/:id
  * @access  Public
  */
 exports.getRescueById = asyncHandler(async (req, res) => {
@@ -60,7 +79,7 @@ exports.getRescueById = asyncHandler(async (req, res) => {
 });
 
 /**
- * @route   PUT /api/rescue/:id/assign
+ * @route   PUT /api/rescues/:id/assign
  * @desc    Dispatch a responder to a rescue
  * @access  Private (Responder, NGO)
  */
@@ -78,8 +97,30 @@ exports.assignRescue = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: 'Rescue dispatched', rescue });
 });
 
+// Route compatibility aliases for alternate action names
+exports.acceptRescue = exports.assignRescue;
+
+exports.completeRescue = asyncHandler(async (req, res) => {
+  const rescue = await RescueRequest.findById(req.params.id);
+  if (!rescue) throw new ApiError('Rescue request not found', 404);
+
+  rescue.status = 'Completed';
+  rescue.timeline.push({ status: 'Completed', desc: 'Rescue completed and closed.' });
+  await rescue.save();
+
+  res.status(200).json({ success: true, message: 'Rescue completed', rescue });
+});
+
+exports.deleteRescue = asyncHandler(async (req, res) => {
+  const rescue = await RescueRequest.findById(req.params.id);
+  if (!rescue) throw new ApiError('Rescue request not found', 404);
+
+  await rescue.deleteOne();
+  res.status(200).json({ success: true, message: 'Rescue request deleted' });
+});
+
 /**
- * @route   PUT /api/rescue/:id/status
+ * @route   PUT /api/rescues/:id/status
  * @desc    Update rescue status and append a timeline entry
  * @access  Private (Responder, NGO)
  */

@@ -1,19 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const protect = require('../middleware/auth.middleware');
-const allowRoles = require('../middleware/role.middleware');
 const {
   createRescue,
-  getRescues,
+  getAllRescues,
   getRescueById,
-  assignRescue,
-  updateRescueStatus,
+  getMyRescues,
+  acceptRescue,
+  completeRescue,
+  deleteRescue,
 } = require('../controllers/rescue.controller');
 
 router.post('/', createRescue);
-router.get('/', getRescues);
+router.get('/get', getAllRescues);
+router.get('/my', protect, getMyRescues);
 router.get('/:id', getRescueById);
-router.put('/:id/assign', protect, allowRoles('Responder', 'NGO'), assignRescue);
-router.put('/:id/status', protect, allowRoles('Responder', 'NGO'), updateRescueStatus);
+router.put('/:id/accept', protect, acceptRescue);
+router.put('/:id/complete', protect, completeRescue);
+router.delete('/:id', protect, deleteRescue);
 
 module.exports = router;

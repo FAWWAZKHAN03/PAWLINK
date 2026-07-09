@@ -45,7 +45,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/adoption', adoptionRoutes);
-app.use('/api/rescue', rescueRoutes);
+app.use('/api/rescues', rescueRoutes);
 app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/volunteers', volunteerRoutes);
