@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
+require("dotenv").config(); // <-- make sure this is at the top
 
 /**
  * Connects to MongoDB (Atlas or local) using the URI from the environment.
  * Logs connection lifecycle events and exits the process on a fatal
  * initial-connection failure so the app never silently runs without a DB.
  */
-const connectDB = async () => {
-  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/pawlink';
+const connectDB = async (url) => {
+  const uri = url || 'mongodb://127.0.0.1:27017/pawlink';
 
   mongoose.connection.on('connected', () => {
     console.log(`MongoDB connected: ${mongoose.connection.host}/${mongoose.connection.name}`);
