@@ -7,9 +7,11 @@ import {
   Users, Volume2, Star, ThumbsUp, ChevronDown
 } from "lucide-react";
 import {
-  MOCK_PETS, MOCK_LOST_PETS, MOCK_RESCUES, MOCK_DONATIONS,
+  MOCK_PETS, MOCK_DONATIONS,
   MOCK_VOLUNTEERS, MOCK_SHELTERS, FAQ_DATA
 } from "../data";
+import { createRescue, getAllRescues, acceptRescue, completeRescue } from "../api/rescue";
+import { createReport, getAllReports } from "../api/lostFound";
 
 export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onNavigateToLogin, onNavigateToSignup, onNavigateToDashboard }) {
   // Navigation & Sub-page state
@@ -17,16 +19,24 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
   const [searchQuery, setSearchQuery] = useState("");
   
   // Rescue Form States
-  const [rescues, setRescues] = useState(MOCK_RESCUES);
+  const [rescues, setRescues] = useState([]);
   const [showReportModal, setShowReportModal] = useState(false);
   const [newRescue, setNewRescue] = useState({
     reporter: "", phone: "", petType: "Dog", location: "",
     emergencyLevel: "High", description: "", image: ""
   });
   const [activeTrackingId, setActiveTrackingId] = useState(null);
+  const [rescueLoading, setRescueLoading] = useState(false);
+  const [rescueError, setRescueError] = useState("");
+  const [rescueFetchLoading, setRescueFetchLoading] = useState(true);
+  const [rescueFetchError, setRescueFetchError] = useState("");
+  const [rescueActionLoading, setRescueActionLoading] = useState(false);
+  const [rescueActionError, setRescueActionError] = useState("");
+  const [rescueActionSuccess, setRescueActionSuccess] = useState("");
+  const [rescueSuccess, setRescueSuccess] = useState("");
   
   // Lost & Found States
-  const [lostPets, setLostPets] = useState(MOCK_LOST_PETS);
+  const [lostPets, setLostPets] = useState([]);
   const [lfFilter, setLfFilter] = useState("All");
   const [showLostModal, setShowLostModal] = useState(false);
   const [newLost, setNewLost] = useState({
@@ -35,6 +45,11 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
   });
   const [searchLF, setSearchLF] = useState("");
   const [simulatedMatch, setSimulatedMatch] = useState(null);
+  const [lostFetchLoading, setLostFetchLoading] = useState(true);
+  const [lostFetchError, setLostFetchError] = useState("");
+  const [lostLoading, setLostLoading] = useState(false);
+  const [lostError, setLostError] = useState("");
+  const [lostSuccess, setLostSuccess] = useState("");
 
   // Adoption States
   const [pets, setPets] = useState(MOCK_PETS);
@@ -74,6 +89,59 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab]);
 
+  // Fetch rescue feed data on mount
+  useEffect(() => {
+    const loadRescues = async () => {
+      setRescueFetchLoading(true);
+      setRescueFetchError("");
+      try {
+        const data = await getAllRescues();
+        const normalized = (data.rescues || []).map((rescue) => ({
+          ...rescue,
+          id: rescue.id || rescue._id,
+        }));
+        setRescues(normalized);
+      } catch (err) {
+        setRescueFetchError(err?.response?.data?.message || err?.message || "Unable to load rescue feed.");
+      } finally {
+        setRescueFetchLoading(false);
+      }
+    };
+
+    loadRescues();
+  }, []);
+
+  const loadLostReports = async () => {
+    setLostFetchLoading(true);
+    setLostFetchError("");
+    try {
+      const data = await getAllReports();
+      const normalized = (data.reports || []).map((report) => ({
+        id: report.id || report._id,
+        name: report.petName || report.title || "Unspecified Pet",
+        type: report.animalType || report.type || "",
+        breed: report.breed || "Unknown",
+        status: report.status || "Lost",
+        lastSeen: report.location || "",
+        date: report.createdAt ? new Date(report.createdAt).toISOString().split("T")[0] : "",
+        owner: report.contactName || report.reportedBy?.name || "Community Report",
+        phone: report.contactPhone || "",
+        reward: report.reward || "None",
+        description: report.description || "",
+        image: report.image || "https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&q=80&w=600",
+      }));
+      setLostPets(normalized);
+    } catch (err) {
+      setLostFetchError(err?.response?.data?.message || err?.message || "Unable to load Lost & Found feed.");
+    } finally {
+      setLostFetchLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLostReports();
+  }, []);
+
   // Helper: toggle saved pet
   const toggleSavePet = (id, e) => {
     e.stopPropagation();
@@ -83,53 +151,124 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
   };
 
   // Helper: report rescue
-  const handleReportRescue = (e) => {
+  const handleReportRescue = async (e) => {
     e.preventDefault();
-    const created = {
-      id: `res-${Date.now()}`,
-      reporter: newRescue.reporter || "Anonymous Reporter",
-      reporterPhone: newRescue.phone || "+1 (555) 000-0000",
-      petType: newRescue.petType,
-      location: newRescue.location || "Co-ordinates Tracked",
-      emergencyLevel: newRescue.emergencyLevel,
-      status: "Reported",
-      description: newRescue.description || "No description provided.",
-      timestamp: new Date().toISOString(),
-      image: newRescue.image || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=600",
-      assignedVolunteer: null,
-      timeline: [
-        { status: "Reported", time: "Just now", desc: "Report registered. Location dispatched to active network." }
-      ]
-    };
-    setRescues([created, ...rescues]);
-    setActiveTrackingId(created.id);
-    setShowReportModal(false);
-    // Reset form
-    setNewRescue({ reporter: "", phone: "", petType: "Dog", location: "", emergencyLevel: "High", description: "", image: "" });
-    // Switch to Rescue View
-    setActiveTab("Rescue");
+    setRescueLoading(true);
+    setRescueError("");
+    setRescueSuccess("");
+
+    try {
+      const payload = {
+        reporter: newRescue.reporter || "Anonymous Reporter",
+        reporterPhone: newRescue.phone || "+1 (555) 000-0000",
+        petType: newRescue.petType,
+        location: newRescue.location || "Co-ordinates Tracked",
+        emergencyLevel: newRescue.emergencyLevel,
+        description: newRescue.description || "No description provided.",
+        image: newRescue.image || "",
+      };
+
+      const response = await createRescue(payload);
+      const createdRescue = {
+        ...response.rescue,
+        id: response.rescue.id || response.rescue._id,
+      };
+
+      setRescues([createdRescue, ...rescues]);
+      setActiveTrackingId(createdRescue.id);
+      setRescueSuccess("Rescue report submitted successfully.");
+      setNewRescue({ reporter: "", phone: "", petType: "Dog", location: "", emergencyLevel: "High", description: "", image: "" });
+
+      setTimeout(() => {
+        setShowReportModal(false);
+        setActiveTab("Rescue");
+      }, 800);
+    } catch (err) {
+      setRescueError(err?.response?.data?.message || err?.message || "Failed to submit rescue report.");
+    } finally {
+      setRescueLoading(false);
+    }
+  };
+
+  const handleAcceptRescue = async (incidentId) => {
+    setRescueActionLoading(true);
+    setRescueActionError("");
+    setRescueActionSuccess("");
+
+    try {
+      const response = await acceptRescue(incidentId);
+      const updatedRescue = {
+        ...response.rescue,
+        id: response.rescue.id || response.rescue._id,
+      };
+
+      setRescues((prev) => prev.map((item) => item.id === incidentId ? updatedRescue : item));
+      setRescueActionSuccess("Rescue accepted successfully.");
+    } catch (err) {
+      setRescueActionError(err?.response?.data?.message || err?.message || "Failed to accept rescue.");
+    } finally {
+      setRescueActionLoading(false);
+    }
+  };
+
+  const handleCompleteRescue = async (incidentId) => {
+    setRescueActionLoading(true);
+    setRescueActionError("");
+    setRescueActionSuccess("");
+
+    try {
+      const response = await completeRescue(incidentId);
+      const updatedRescue = {
+        ...response.rescue,
+        id: response.rescue.id || response.rescue._id,
+      };
+
+      setRescues((prev) => prev.map((item) => item.id === incidentId ? updatedRescue : item));
+      setRescueActionSuccess("Rescue completed successfully.");
+    } catch (err) {
+      setRescueActionError(err?.response?.data?.message || err?.message || "Failed to complete rescue.");
+    } finally {
+      setRescueActionLoading(false);
+    }
   };
 
   // Helper: Lost and Found submission
-  const handleReportLost = (e) => {
+  const handleReportLost = async (e) => {
     e.preventDefault();
-    const created = {
-      id: `lost-${Date.now()}`,
-      ...newLost,
-      date: new Date().toISOString().split('T')[0],
-      image: "https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&q=80&w=600"
-    };
-    setLostPets([created, ...lostPets]);
-    setShowLostModal(false);
+    setLostLoading(true);
+    setLostError("");
+    setLostSuccess("");
 
-    // Trigger artificial premium matching algorithm simulation
-    setTimeout(() => {
+    try {
+      const payload = {
+        title: newLost.name || "Pet Alert",
+        petName: newLost.name || "",
+        animalType: newLost.type || "dog",
+        breed: newLost.breed || "",
+        description: newLost.description || "",
+        status: newLost.status || "Lost",
+        location: newLost.lastSeen || "",
+        contactName: newLost.owner || "Anonymous",
+        contactPhone: newLost.phone || "",
+        reward: newLost.reward || "",
+        image: "",
+      };
+
+      await createReport(payload);
+      await loadLostReports();
+      setLostSuccess("Lost & Found report submitted successfully.");
+      setShowLostModal(false);
       setSimulatedMatch({
-        lost: created,
-        matchedWith: MOCK_PETS[0], // Milo match
-        matchScore: 92
+        lost: { ...payload, status: payload.status },
+        matchedWith: { name: payload.petName || "reported pet" },
+        matchScore: 92,
       });
-    }, 2000);
+      setNewLost({ name: "", type: "dog", breed: "", status: "Lost", lastSeen: "", owner: "", phone: "", reward: "", description: "" });
+    } catch (err) {
+      setLostError(err?.response?.data?.message || err?.message || "Failed to submit Lost & Found report.");
+    } finally {
+      setLostLoading(false);
+    }
   };
 
   // Helper: Submit adoption application
@@ -510,12 +649,25 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
                     </div>
 
                     <div className="space-y-4">
-                      {rescues.slice(0, 3).map((res) => (
-                        <div 
-                          key={res.id} 
-                          onClick={() => { setActiveTab("Rescue"); setActiveTrackingId(res.id); }}
-                          className="bg-slate-800/50 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 cursor-pointer group"
-                        >
+                      {rescueFetchLoading ? (
+                        <div className="p-6 rounded-2xl border border-slate-800/70 bg-slate-800/40 text-slate-300 text-sm">
+                          Loading rescue feed...
+                        </div>
+                      ) : rescueFetchError ? (
+                        <div className="p-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm">
+                          {rescueFetchError}
+                        </div>
+                      ) : rescues.length === 0 ? (
+                        <div className="p-6 rounded-2xl border border-slate-800/70 bg-slate-800/40 text-slate-300 text-sm">
+                          No active rescue incidents available right now.
+                        </div>
+                      ) : (
+                        rescues.slice(0, 3).map((res) => (
+                          <div 
+                            key={res.id} 
+                            onClick={() => { setActiveTab("Rescue"); setActiveTrackingId(res.id); }}
+                            className="bg-slate-800/50 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 cursor-pointer group"
+                          >
                           <img src={res.image} className="w-16 h-16 object-cover rounded-xl border border-slate-700 group-hover:scale-105 transition-transform" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
@@ -541,7 +693,7 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
                             </span>
                           </div>
                         </div>
-                      ))}
+                      ))) }
                     </div>
                   </div>
 
@@ -916,14 +1068,32 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
                       </div>
 
                       {currentIncident.status !== "Completed" && (
-                        <div className="bg-green-50 border border-green-100 p-4 rounded-2xl flex items-center justify-between">
-                          <p className="text-xs text-green-800 font-medium">Want to coordinate dispatch with Markus Aurel?</p>
-                          <button 
-                            onClick={() => { setActiveTab("Contact"); }}
-                            className="bg-green-700 hover:bg-green-800 text-white font-bold px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider cursor-pointer"
-                          >
-                            Open Comms Link
-                          </button>
+                        <div className="bg-green-50 border border-green-100 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs text-green-800 font-medium">Want to coordinate dispatch with Markus Aurel?</p>
+                            {rescueActionError && (
+                              <p className="text-xs text-red-600 mt-2">{rescueActionError}</p>
+                            )}
+                            {rescueActionSuccess && (
+                              <p className="text-xs text-green-700 mt-2">{rescueActionSuccess}</p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              disabled={rescueActionLoading}
+                              onClick={() => handleAcceptRescue(currentIncident.id)}
+                              className="bg-green-700 hover:bg-green-800 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider cursor-pointer"
+                            >
+                              {rescueActionLoading ? "Processing..." : "Accept Rescue"}
+                            </button>
+                            <button 
+                              disabled={rescueActionLoading || currentIncident.status === "Completed"}
+                              onClick={() => handleCompleteRescue(currentIncident.id)}
+                              className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider cursor-pointer"
+                            >
+                              {rescueActionLoading ? "Processing..." : "Complete Rescue"}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -953,6 +1123,10 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
 
             {/* Filter tags & search */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+              {lostFetchLoading && <p className="text-xs text-slate-500">Loading recent reports...</p>}
+              {lostFetchError && <p className="text-xs text-red-600">{lostFetchError}</p>}
+              {lostSuccess && <p className="text-xs text-green-700">{lostSuccess}</p>}
+              {lostError && <p className="text-xs text-red-600">{lostError}</p>}
               <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
                 {["All", "Lost", "Found"].map(t => (
                   <button 
@@ -1768,6 +1942,16 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
               </div>
 
               <form onSubmit={handleReportRescue} className="space-y-4 text-xs text-slate-600">
+                {rescueError && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 p-3 rounded-xl text-[11px]">
+                    {rescueError}
+                  </div>
+                )}
+                {rescueSuccess && (
+                  <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-3 rounded-xl text-[11px]">
+                    {rescueSuccess}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="font-extrabold text-slate-800">Your Full Name</label>
@@ -1849,9 +2033,10 @@ export default function PublicWebsite({ isAuthenticated, authRole, onLogout, onN
 
                 <button 
                   type="submit"
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-4 rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-red-900/15"
+                  disabled={rescueLoading}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-4 rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-red-900/15 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Dispatch Alerts to Network
+                  {rescueLoading ? "Sending rescue report..." : "Dispatch Alerts to Network"}
                 </button>
               </form>
             </motion.div>

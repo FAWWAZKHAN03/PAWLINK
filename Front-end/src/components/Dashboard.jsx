@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield, Bell, Search, User, MapPin, Compass, Activity, Heart,
@@ -7,10 +7,11 @@ import {
   Volume2, Play, Pause, LogOut, Moon, Sun, Clipboard, ExternalLink, RefreshCw
 } from "lucide-react";
 import {
-  MOCK_PETS, MOCK_LOST_PETS, MOCK_RESCUES, MOCK_DONATIONS,
+  MOCK_PETS, MOCK_RESCUES, MOCK_DONATIONS,
   MOCK_VOLUNTEERS, MOCK_SHELTERS, MOCK_MESSAGES
 } from "../data";
 import { resolveAssetUrl } from "../api/client";
+import { createReport, getAllReports } from "../api/lostFound";
 
 export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onNavigateToPublic, onNavigateToProfile }) {
   const isCitizen = role === "Citizen";
@@ -40,7 +41,11 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
   const [showDispatchToast, setShowDispatchToast] = useState(null);
 
   // Dynamic states for Citizen interaction
-  const [lostPetsList, setLostPetsList] = useState(MOCK_LOST_PETS);
+  const [lostPetsList, setLostPetsList] = useState([]);
+  const [lostPetsLoading, setLostPetsLoading] = useState(true);
+  const [lostPetsError, setLostPetsError] = useState("");
+  const [lostPetsSuccess, setLostPetsSuccess] = useState("");
+  const [lostPetLoading, setLostPetLoading] = useState(false);
   const [donationsData, setDonationsData] = useState(MOCK_DONATIONS);
   const [selectedCampaign, setSelectedCampaign] = useState(null); // Campaign chosen for donation
   const [donationAmount, setDonationAmount] = useState("25");
@@ -71,6 +76,74 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
   // Adoption search filter
   const [adoptionFilter, setAdoptionFilter] = useState("All");
   const [adoptionSuccessMsg, setAdoptionSuccessMsg] = useState("");
+
+  const loadLostReports = async () => {
+    setLostPetsLoading(true);
+    setLostPetsError("");
+    try {
+      const data = await getAllReports();
+      const normalized = (data.reports || []).map((report) => ({
+        id: report.id || report._id,
+        name: report.petName || report.title || "Unknown stray",
+        type: report.animalType || "dog",
+        breed: report.breed || "Mixed Breed",
+        status: report.status || "Lost",
+        lastSeen: report.location || "",
+        date: report.createdAt ? new Date(report.createdAt).toISOString().split("T")[0] : "",
+        owner: report.contactName || report.reportedBy?.name || "Community Report",
+        phone: report.contactPhone || "",
+        reward: report.reward || "None",
+        description: report.description || "",
+        image: report.image || "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=600",
+      }));
+      setLostPetsList(normalized);
+    } catch (err) {
+      setLostPetsError(err?.response?.data?.message || err?.message || "Unable to load Lost & Found feed.");
+    } finally {
+      setLostPetsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLostReports();
+  }, []);
+
+  const handleLostReportSubmit = async (e) => {
+    e.preventDefault();
+    setLostPetLoading(true);
+    setLostPetsError("");
+    setLostPetsSuccess("");
+
+    try {
+      const payload = {
+        title: lostPetName || "Pet Alert",
+        petName: lostPetName || "",
+        animalType: lostPetType.toLowerCase(),
+        breed: lostPetBreed || "",
+        description: lostPetDesc || "",
+        status: "Lost",
+        location: lostPetLocation,
+        contactName: "You (Citizen Account)",
+        contactPhone: "+1 (555) 000-0000",
+        reward: lostPetReward || "",
+        image: "",
+      };
+
+      await createReport(payload);
+      await loadLostReports();
+      setLostPetSubmitted(true);
+      setLostPetsSuccess("Lost & Found report submitted successfully.");
+      setLostPetName("");
+      setLostPetBreed("");
+      setLostPetLocation("");
+      setLostPetReward("");
+      setLostPetDesc("");
+    } catch (err) {
+      setLostPetsError(err?.response?.data?.message || err?.message || "Failed to submit Lost & Found report.");
+    } finally {
+      setLostPetLoading(false);
+    }
+  };
 
   const toggleNotificationRead = (id) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
@@ -657,6 +730,9 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
               </div>
 
               <div className="grid lg:grid-cols-12 gap-8">
+                {lostPetsLoading && <div className="lg:col-span-12 text-xs text-slate-500">Loading recent reports...</div>}
+                {lostPetsError && <div className="lg:col-span-12 text-xs text-red-600">{lostPetsError}</div>}
+                {lostPetsSuccess && <div className="lg:col-span-12 text-xs text-green-700">{lostPetsSuccess}</div>}
                 {/* Left: Interactive list of Lost & Found (8 Cols) */}
                 <div className="lg:col-span-8 space-y-6">
                   
@@ -769,42 +845,7 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
                       </button>
                     </div>
                   ) : (
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!lostPetName.trim() && lostPetType === "Dog") {
-                        alert("Please provide the pet name!");
-                        return;
-                      }
-                      if (!lostPetLocation.trim()) {
-                        alert("Please specify the location!");
-                        return;
-                      }
-
-                      const newReport = {
-                        id: `lost-${Date.now().toString().slice(-3)}`,
-                        name: lostPetName || "Unnamed Stray",
-                        type: lostPetType.toLowerCase(),
-                        breed: lostPetBreed || "Mixed Breed",
-                        status: "Lost",
-                        lastSeen: lostPetLocation,
-                        date: new Date().toISOString().split('T')[0],
-                        owner: "You (Citizen Account)",
-                        phone: "+1 (555) ME-NOW",
-                        reward: lostPetReward ? `$${lostPetReward}` : "None",
-                        description: lostPetDesc || "Logged recently by account owner.",
-                        image: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=600"
-                      };
-
-                      setLostPetsList([newReport, ...lostPetsList]);
-                      setLostPetSubmitted(true);
-                      
-                      // Clear forms
-                      setLostPetName("");
-                      setLostPetBreed("");
-                      setLostPetLocation("");
-                      setLostPetReward("");
-                      setLostPetDesc("");
-                    }} className="space-y-4">
+                    <form onSubmit={handleLostReportSubmit} className="space-y-4">
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -878,9 +919,10 @@ export default function Dashboard({ role, user, onLogout, onNavigateToAdmin, onN
 
                       <button 
                         type="submit"
-                        className="w-full bg-green-700 hover:bg-green-800 text-white font-extrabold py-2.5 rounded-xl text-xs transition-colors cursor-pointer"
+                        disabled={lostPetLoading}
+                        className="w-full bg-green-700 hover:bg-green-800 disabled:bg-slate-300 text-white font-extrabold py-2.5 rounded-xl text-xs transition-colors cursor-pointer"
                       >
-                        Publish Report
+                        {lostPetLoading ? "Publishing..." : "Publish Report"}
                       </button>
 
                     </form>
