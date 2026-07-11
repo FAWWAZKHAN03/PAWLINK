@@ -12,7 +12,7 @@ const {
 } = require('../controllers/rescue.controller');
 
 router.post('/', createRescue);
-router.get('/get', getAllRescues);
+router.get('/', getAllRescues);
 router.get('/my', protect, getMyRescues);
 router.get('/:id', getRescueById);
 router.put('/:id/accept', protect, acceptRescue);
